@@ -1,0 +1,62 @@
+---
+- name: loki | set application facts
+  ansible.builtin.set_fact:
+    app_name: "loki"
+    app_image: "{{ loki_docker_version }}"
+    app_network: "{{ loki_docker_network_name }}"
+    app_base_path: "{{ loki_docker_base_path }}"
+    app_user: "{{ loki_docker_user }}"
+    app_uid: "{{ loki_docker_uid }}"
+    app_group: "{{ loki_docker_group }}"
+    app_gid: "{{ loki_docker_gid }}"
+    app_timezone: "{{ loki_docker_timezone }}"
+    app_environment_variables: "{{ loki_docker_environment_variables }}"
+    app_volumes: "{{ loki_docker_volumes }}"
+    app_labels: "{{ loki_docker_labels }}"
+    app_ports: "{{ loki_docker_ports }}"
+
+- name: "loki | Ensure app folders exists"
+  ansible.builtin.file:
+    name: '{{ app_base_path }}/{{ app_name }}/{{ item }}'
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0770"
+    state: directory
+  with_items:
+    - "conf"
+    - "data"
+
+- name: loki | get docker executable path
+  ansible.builtin.command:
+    cmd: "which docker"
+  changed_when: false
+  register: loki_docker_executable_path
+
+- name: "loki | create docker-compose.yml"
+  ansible.builtin.template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ app_base_path }}/{{ app_name }}/docker-compose.yml"
+    mode: "0640"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+  notify: loki_restart
+
+- name: "loki | create loki config.yml"
+  ansible.builtin.template:
+    src: "config.yaml.j2"
+    dest: "{{ app_base_path }}/{{ app_name }}/conf/config.yaml"
+    mode: "0640"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+  notify: loki_restart
+
+- name: "loki | Create systemd service"
+  ansible.builtin.template:
+    src: "systemd.service.j2"
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+    mode: "0770"
+    owner: "root"
+    group: "root"
+  notify:
+    - loki_systemd_reload
+    - loki_restart

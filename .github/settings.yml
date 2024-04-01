@@ -1,0 +1,8 @@
+---
+#
+# Ansible managed
+#
+repository:
+  description: Installs and configures loki container based on official loki docker container
+  homepage: https://mullholland.net
+  topics: cloud, development, webserver, loki, proxy, ansible, molecule, tox, playbook

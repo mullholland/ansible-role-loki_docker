@@ -1,0 +1,13 @@
+---
+- name: user | Ensure group exists
+  ansible.builtin.group:
+    name: "{{ loki_docker_group }}"
+    gid: "{{ loki_docker_gid }}"
+    state: present
+
+- name: user | Ensure user exists with gid
+  ansible.builtin.user:
+    name: "{{ loki_docker_user }}"
+    uid: "{{ loki_docker_uid }}"
+    system: "{{ loki_docker_user_system | default(omit) }}"
+    state: "present"

@@ -1,0 +1,75 @@
+---
+# General config
+loki_docker_network_name: "web"
+loki_docker_base_path: "/opt"
+loki_docker_timezone: "Europe/Berlin"
+
+# User/Group of the stack. Everything is mapped to this, instead of root.
+loki_docker_user: "homelab"
+loki_docker_uid: "900"
+loki_docker_group: "homelab"
+loki_docker_gid: "900"
+loki_docker_user_system: true
+
+# which container version to install
+# https://hub.docker.com/r/loki/loki/tags
+# can also be latest
+loki_docker_version: "grafana/loki:latest"
+
+# additional docker compose environment varaibles
+# https://loki.com/docs/loki/latest/setup-loki/configure-loki/#override-configuration-with-environment-variables
+loki_docker_environment_variables: []
+
+loki_docker_volumes:
+  - "/opt/loki/conf/config.yaml:/etc/loki/local-config.yaml"
+  - "/opt/loki/data:/data"
+
+# which port to expose. can be empty
+loki_docker_ports:
+  - "3100:3100/tcp"  # WebUI
+
+loki_docker_labels:
+  - "traefik.enable=false"
+# - "traefik.enable=true"
+# - "traefik.http.routers.loki.entryPoints=https"
+# - "traefik.http.routers.loki.rule=Host(`loki.example.com`)"
+# - "traefik.http.routers.loki.tls.certResolver=letsEncrypt"
+# - "traefik.http.routers.loki.tls=true"
+#  - "traefik.http.routers.loki.service=loki"
+#  - "traefik.http.routers.loki.loadbalancer.server.port=80"
+
+loki_docker_config:
+  auth_enabled: false
+  server:
+    http_listen_port: 3100
+    grpc_listen_port: 9096
+  common:
+    instance_addr: 127.0.0.1
+    path_prefix: /data/loki
+    storage:
+      filesystem:
+        chunks_directory: /data/loki/chunks
+        rules_directory: /data/loki/rules
+    replication_factor: 1
+    ring:
+      kvstore:
+        store: inmemory
+  query_range:
+    results_cache:
+      cache:
+        embedded_cache:
+          enabled: true
+          max_size_mb: 100
+  schema_config:
+    configs:
+      - from: 2020-10-24
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
+  ruler:
+    alertmanager_url: http://localhost:9093
+  analytics:
+    reporting_enabled: false
